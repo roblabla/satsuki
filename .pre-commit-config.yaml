@@ -1,0 +1,5 @@
+repos:
+-   repo: https://github.com/Young-Naive-Simple/pre-commit-rust
+    rev: 3a8de64acc969112746489e5ec1f0b13e00d871e
+    hooks:
+    -   id: fmt

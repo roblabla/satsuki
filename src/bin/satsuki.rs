@@ -284,11 +284,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         (None, None) => {
             eprintln!("This tool needs a mapping file to function. Pass one using --mapping-file or --mapping-file-csv");
             std::process::exit(1);
-        },
+        }
         (Some(_), Some(_)) => {
             eprintln!("Can't pass both a TOML and CSV mapping file. Only pass one of --mapping-file or --mapping-file-csv");
             std::process::exit(1);
-        },
+        }
         (Some(toml), None) => (toml, false),
         (None, Some(csv)) => (csv, true),
     };
@@ -306,7 +306,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             .flexible(true)
             .from_reader(raw_mapping.as_bytes());
         Mapping {
-            function: Some(Result::from_iter(rdr.deserialize())?)
+            function: Some(Result::from_iter(rdr.deserialize())?),
         }
     } else {
         toml::from_str::<Mapping>(&raw_mapping)?
