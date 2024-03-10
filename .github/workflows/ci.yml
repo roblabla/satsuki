@@ -5,12 +5,35 @@ on:
     branches: [ "master" ]
     tags: [ "*" ]
   pull_request:
-    branches: [ "master" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+        - artifact-name: x86_64-windows-satsuki
+          bin-name: satsuki.exe
+          target: x86_64-pc-windows-msvc
+          runs-on: windows-latest
+        - artifact-name: i686-windows-satsuki
+          bin-name: satsuki.exe
+          target: i686-pc-windows-msvc
+          runs-on: windows-latest
+        - artifact-name: x86_64-macos-satsuki
+          bin-name: satsuki
+          target: x86_64-apple-darwin
+          runs-on: macos-latest
+        - artifact-name: aarch64-macos-satsuki
+          bin-name: satsuki
+          target: aarch64-apple-darwin
+          runs-on: macos-latest
+        - artifact-name: x86_64-linux-satsuki
+          bin-name: satsuki
+          target: x86_64-unknown-linux-musl
+          runs-on: ubuntu-latest
+
+    runs-on: ${{ matrix.runs-on }}
     permissions:
       contents: write
     steps:
@@ -20,15 +43,20 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
+        target: ${{ matrix.target }}
+    - if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
     - uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --release --target x86_64-pc-windows-msvc
+        args: --release --target ${{ matrix.target }}
     - uses: actions/upload-artifact@v3
       with:
-        name: win64-satsuki
-        path: target/x86_64-pc-windows-msvc/release/satsuki.exe
+        name: ${{ matrix.artifact-name }}
+        path: target/${{ matrix.target }}/release/${{ matrix.bin-name }}
     - if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1
       with:
-        artifacts: target/x86_64-pc-windows-msvc/release/satsuki.exe
+        name: ${{ matrix.artifact-name }}
+        artifacts: target/${{ matrix.target }}/release/${{ matrix.bin-name }}
+
