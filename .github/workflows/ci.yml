@@ -12,11 +12,11 @@ jobs:
     strategy:
       matrix:
         include:
-        - artifact-name: x86_64-windows-satsuki
+        - artifact-name: x86_64-windows-satsuki.exe
           bin-name: satsuki.exe
           target: x86_64-pc-windows-msvc
           runs-on: windows-latest
-        - artifact-name: i686-windows-satsuki
+        - artifact-name: i686-windows-satsuki.exe
           bin-name: satsuki.exe
           target: i686-pc-windows-msvc
           runs-on: windows-latest
@@ -50,13 +50,15 @@ jobs:
       with:
         command: build
         args: --release --target ${{ matrix.target }}
+    - name: Rename binary
+      run: mv "target/${{ matrix.target }}/release/${{ matrix.bin-name }}" "${{ matrix.artifact-name }}"
     - uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.artifact-name }}
-        path: target/${{ matrix.target }}/release/${{ matrix.bin-name }}
+        path: ${{ matrix.artifact-name }}
     - if: github.ref_type == 'tag'
       uses: ncipollo/release-action@v1
       with:
-        name: ${{ matrix.artifact-name }}
-        artifacts: target/${{ matrix.target }}/release/${{ matrix.bin-name }}
+        allowUpdates: true
+        artifacts: ${{ matrix.artifact-name }}
 
