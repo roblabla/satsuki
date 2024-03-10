@@ -6,11 +6,11 @@ use std::collections::hash_map::Iter;
 use std::fmt::Write;
 use std::{collections::HashMap, error::Error};
 
-use capstone::arch::x86::{X86Operand, X86OperandType};
 use capstone::arch::x86::X86InsnGroup::*;
+use capstone::arch::x86::{X86Operand, X86OperandType};
 use capstone::arch::ArchOperand;
-use capstone::{Capstone, Insn, InsnDetail, Instructions};
 use capstone::InsnGroupType::*;
+use capstone::{Capstone, Insn, InsnDetail, Instructions};
 use object::{File, Object, ObjectSection, ObjectSymbol, SymbolKind};
 use pdb::{FallibleIterator, ProcedureSymbol, PublicSymbol, Source, SymbolData, PDB};
 use serde::Deserialize;
@@ -328,7 +328,12 @@ pub struct Function {
 }
 
 impl Function {
-    fn find_labels(&self, ctx: &Capstone, force_address_zero: bool, instructions: &Instructions<'_>) -> Result<HashMap<u64, String>, ExecutableError> {
+    fn find_labels(
+        &self,
+        ctx: &Capstone,
+        force_address_zero: bool,
+        instructions: &Instructions<'_>,
+    ) -> Result<HashMap<u64, String>, ExecutableError> {
         let mut labels = HashMap::new();
         let mut idx = 0;
         for instruction in instructions.iter() {
@@ -348,14 +353,14 @@ impl Function {
                         let target_address = if force_address_zero {
                             if is_32bit {
                                 (self.address as i32 + immediate as i32) as usize
-
                             } else {
                                 (self.address as i64 + immediate) as usize
                             }
                         } else {
                             immediate as usize
                         };
-                        if (self.address..self.address + self.data.len()).contains(&target_address) {
+                        if (self.address..self.address + self.data.len()).contains(&target_address)
+                        {
                             let addr = (target_address - self.address) as u64;
                             if !labels.contains_key(&addr) {
                                 idx += 1;
@@ -389,7 +394,12 @@ impl Function {
         let mut has_custom_format = false;
 
         // Handle relative call
-        fn get_imm(fn_address: usize, detail: &InsnDetail<'_>, is_32bit: bool, force_address_zero: bool) -> Option<usize> {
+        fn get_imm(
+            fn_address: usize,
+            detail: &InsnDetail<'_>,
+            is_32bit: bool,
+            force_address_zero: bool,
+        ) -> Option<usize> {
             let arch_detail = detail.arch_detail();
             let ops = arch_detail.operands();
 
@@ -402,7 +412,6 @@ impl Function {
                     let target_address = if force_address_zero {
                         if is_32bit {
                             (fn_address as i32 + immediate as i32) as usize
-
                         } else {
                             (fn_address as i64 + immediate) as usize
                         }
@@ -417,12 +426,14 @@ impl Function {
             None
         }
 
-
         if resolve_names {
             // Handle relative call
             if is_call && is_branch_relative {
-                if let Some(target_address) = get_imm(self.address, &detail, is_32bit, force_address_zero) {
-                    if let Some(target_function) = executable.get_function_by_address(target_address)
+                if let Some(target_address) =
+                    get_imm(self.address, &detail, is_32bit, force_address_zero)
+                {
+                    if let Some(target_function) =
+                        executable.get_function_by_address(target_address)
                     {
                         if let Some(mnemonic) = instruction.mnemonic() {
                             writeln!(res, "    {} {}", mnemonic, target_function.name)?;
@@ -435,7 +446,9 @@ impl Function {
         }
 
         if !has_custom_format && is_jump {
-            if let Some(target_address) = get_imm(self.address, &detail, is_32bit, force_address_zero) {
+            if let Some(target_address) =
+                get_imm(self.address, &detail, is_32bit, force_address_zero)
+            {
                 let relative_addr = target_address - self.address;
                 if let Some(label) = labels.get(&(relative_addr as u64)) {
                     if let Some(mnemonic) = instruction.mnemonic() {
